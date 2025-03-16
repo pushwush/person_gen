@@ -6,19 +6,19 @@
 
 enum tipes {exam, test, course_work};
 typedef struct Subject {
-    char name_lessons[30];
-    unsigned short audience_lecture;
-    unsigned char audience_labs;
-    unsigned char sum_hours;
-    enum tipes form;
+    char *name_lessons; // Динамическая строка для названия дисциплины
+    unsigned char audience_lecture; // Номер аудитории (до 255)
+    unsigned char audience_labs;    // Номер аудитории (до 255)
+    unsigned char sum_hours;        // Количество часов (до 255)
+    enum tipes form;                // Форма аттестации
 } My_Subject;
 
 typedef struct Student {
-    char name[100];
-    char b_date[10];
-    char group[20];
-    struct Subject *num_of_subject;
-    int avarage_disciplines; // Количество дисциплин
+    char *name;       // Динамическая строка для имени
+    int b_date;       // Год рождения (4 байта вместо 10)
+    char *group;      // Динамическая строка для группы
+    My_Subject *num_of_subject; // Указатель на массив дисциплин
+    unsigned char avarage_disciplines; // Количество дисциплин (до 255)
 } My_Student;
 
 My_Student *student = NULL;
@@ -77,20 +77,50 @@ void generait(int N) {
     }
 
     for (int i = 0; i < N; i++) {
-        strcpy(student[i].name, full_names[rand() % (sizeof(full_names) / sizeof(full_names[0]))]); // Генерация фамилии студента
-        strcpy(student[i].group, classrooms[rand() % (sizeof(classrooms) / sizeof(classrooms[0]))]); // Генерация группы студента
-        student[i].avarage_disciplines = rand() % (max_sub - min_sub + 1) + min_sub; // Генерация количества дисциплин для студента
-        student[i].num_of_subject = (My_Subject*)calloc(student[i].avarage_disciplines, sizeof(My_Subject)); // Выделение памяти для массива дисциплин студента
-        if (student[i].num_of_subject == NULL) {
+        My_Student *current_student = student + i; // Указатель на текущего студента
+
+        // Динамическое выделение памяти для имени
+        current_student->name = strdup(full_names[rand() % (sizeof(full_names) / sizeof(full_names[0]))]);
+        if (current_student->name == NULL) {
+            printf("Ошибка: не удалось выделить память для имени студента %d.\n", i);
+            return;
+        }
+
+        // Генерация года рождения (например, от 1990 до 2005)
+        current_student->b_date = 1990 + rand() % 16;
+
+        // Динамическое выделение памяти для группы
+        current_student->group = strdup(classrooms[rand() % (sizeof(classrooms) / sizeof(classrooms[0]))]);
+        if (current_student->group == NULL) {
+            printf("Ошибка: не удалось выделить память для группы студента %d.\n", i);
+            return;
+        }
+
+        // Генерация количества дисциплин
+        current_student->avarage_disciplines = rand() % (max_sub - min_sub + 1) + min_sub;
+
+        // Выделение памяти для массива дисциплин
+        current_student->num_of_subject = (My_Subject*)calloc(current_student->avarage_disciplines, sizeof(My_Subject));
+        if (current_student->num_of_subject == NULL) {
             printf("Ошибка: не удалось выделить память для дисциплин студента %d.\n", i);
             return;
         }
-        for (int j = 0; j < student[i].avarage_disciplines; j++) {
-            strcpy(student[i].num_of_subject[j].name_lessons, subjects[rand() % (sizeof(subjects) / sizeof(subjects[0]))]);
-            student[i].num_of_subject[j].audience_lecture = rand() % 255 + 1;
-            student[i].num_of_subject[j].audience_labs = rand() % 255 + 1;
-            student[i].num_of_subject[j].sum_hours = rand() % 255 + 1;
-            student[i].num_of_subject[j].form = rand() % 3;
+
+        for (int j = 0; j < current_student->avarage_disciplines; j++) {
+            My_Subject *current_subject = current_student->num_of_subject + j; // Указатель на текущую дисциплину
+
+            // Динамическое выделение памяти для названия дисциплины
+            current_subject->name_lessons = strdup(subjects[rand() % (sizeof(subjects) / sizeof(subjects[0]))]);
+            if (current_subject->name_lessons == NULL) {
+                printf("Ошибка: не удалось выделить память для названия дисциплины %d студента %d.\n", j, i);
+                return;
+            }
+
+            // Генерация случайных значений
+            current_subject->audience_lecture = rand() % 255 + 1;
+            current_subject->audience_labs = rand() % 255 + 1;
+            current_subject->sum_hours = rand() % 255 + 1;
+            current_subject->form = rand() % 3;
         }
     }
 }
@@ -105,29 +135,38 @@ void print_stud(int n) {
         n = N;
     }
     for (int i = 0; i < n; i++) {
-        printf("Имя студента: %s, группа студента: %s\n", student[i].name, student[i].group); // Исправлено: добавлены аргументы
-        for (int j = 0; j < student[i].avarage_disciplines; j++) {
+        My_Student *current_student = student + i; // Указатель на текущего студента
+        printf("Имя студента: %s, группа студента: %s, год рождения: %d\n", current_student->name, current_student->group, current_student->b_date);
+        for (int j = 0; j < current_student->avarage_disciplines; j++) {
+            My_Subject *current_subject = current_student->num_of_subject + j; // Указатель на текущую дисциплину
             printf("Предмет %d: %s, Лекционная комната: %d, Лабораторная комната: %d, Часы: %d, Форма сдачи: %d\n",
-                j + 1, student[i].num_of_subject[j].name_lessons, student[i].num_of_subject[j].audience_lecture,
-                student[i].num_of_subject[j].audience_labs,
-                student[i].num_of_subject[j].sum_hours, student[i].num_of_subject[j].form);
+                j + 1, current_subject->name_lessons, current_subject->audience_lecture,
+                current_subject->audience_labs,
+                current_subject->sum_hours, current_subject->form);
         }
         printf("\n");
     }
 }
 
 void size() {
-    if (student == NULL) { // Исправлено: исправлено присваивание на сравнение
+    if (student == NULL) {
         printf("Ошибка: нет данных\n");
         return;
     }
     size_t total_size = N * sizeof(struct Student);  // Основная структура студентов
     for (int i = 0; i < N; i++) {
-        total_size += student[i].avarage_disciplines * sizeof(struct Subject);
+        My_Student *current_student = student + i; // Указатель на текущего студента
+        total_size += current_student->avarage_disciplines * sizeof(struct Subject);
+        total_size += strlen(current_student->name) + 1; // Память для имени
+        total_size += strlen(current_student->group) + 1; // Память для группы
+        for (int j = 0; j < current_student->avarage_disciplines; j++) {
+            My_Subject *current_subject = current_student->num_of_subject + j; // Указатель на текущую дисциплину
+            total_size += strlen(current_subject->name_lessons) + 1; // Память для названия дисциплины
+        }
     }
 
     if (total_size < 1024) {
-        printf("Size: %zu B\n", total_size); // Исправлено: использован %zu для size_t
+        printf("Size: %zu B\n", total_size);
     }
     else if (total_size < 1048576) {
         printf("Size: %.2f KB\n", total_size / 1024.0);
@@ -141,10 +180,20 @@ void size() {
 }
 
 void clean() {
-    for (int i = 0; i < N; i++) {
-        free(student[i].num_of_subject);
+    if (student == NULL) {
+        return;
     }
-    free(student);
+    for (int i = 0; i < N; i++) {
+        My_Student *current_student = student + i; // Указатель на текущего студента
+        free(current_student->name); // Освобождение памяти для имени
+        free(current_student->group); // Освобождение памяти для группы
+        for (int j = 0; j < current_student->avarage_disciplines; j++) {
+            My_Subject *current_subject = current_student->num_of_subject + j; // Указатель на текущую дисциплину
+            free(current_subject->name_lessons); // Освобождение памяти для названия дисциплины
+        }
+        free(current_student->num_of_subject); // Освобождение памяти для массива дисциплин
+    }
+    free(student); // Освобождение памяти для массива студентов
     student = NULL;
 }
 
@@ -171,7 +220,7 @@ int check_memory(int N) {
     return 1;
 }
 
-// функция для расчета максимального количества студентов
+// Функция для расчета максимального количества студентов
 void check_max_students() {
     MEMORYSTATUSEX memInfo;
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);
