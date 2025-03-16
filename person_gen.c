@@ -1,26 +1,27 @@
 #include <stdio.h>
-#include <stdlib.h> // Добавлено для malloc и free
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <windows.h>
 
 enum tipes {exam, test, course_work};
-struct Subject {
+typedef struct Subject {
     char name_lessons[30];
     unsigned short audience_lecture;
     unsigned char audience_labs;
     unsigned char sum_hours;
     enum tipes form;
-};
+} My_Subject;
 
-struct Student {
+typedef struct Student {
     char name[100];
     char b_date[10];
     char group[20];
     struct Subject *num_of_subject;
     int avarage_disciplines; // Количество дисциплин
-};
+} My_Student;
 
-struct Student *student = NULL;
+My_Student *student = NULL;
 int N = 0;
 int max_sub = 20;
 int min_sub = 10;
@@ -69,14 +70,23 @@ char *subjects[] = {
 
 void generait(int N) {
     srand(time(NULL));
-    student = (struct Student*)malloc(N * sizeof(struct Student));
+    student = (My_Student*)calloc(N, sizeof(My_Student));
+    if (student == NULL) {
+        printf("Ошибка: не удалось выделить память для студентов.\n");
+        return;
+    }
+
     for (int i = 0; i < N; i++) {
-        strcpy(student[i].name, full_names[rand() % 50]); // Генерация фамилии студента
-        strcpy(student[i].group, classrooms[rand() % 50]); // Генерация группы студента
+        strcpy(student[i].name, full_names[rand() % (sizeof(full_names) / sizeof(full_names[0]))]); // Генерация фамилии студента
+        strcpy(student[i].group, classrooms[rand() % (sizeof(classrooms) / sizeof(classrooms[0]))]); // Генерация группы студента
         student[i].avarage_disciplines = rand() % (max_sub - min_sub + 1) + min_sub; // Генерация количества дисциплин для студента
-        student[i].num_of_subject = (struct Subject*)malloc(student[i].avarage_disciplines * sizeof(struct Subject)); // Выделение памяти для массива дисциплин студента
+        student[i].num_of_subject = (My_Subject*)calloc(student[i].avarage_disciplines, sizeof(My_Subject)); // Выделение памяти для массива дисциплин студента
+        if (student[i].num_of_subject == NULL) {
+            printf("Ошибка: не удалось выделить память для дисциплин студента %d.\n", i);
+            return;
+        }
         for (int j = 0; j < student[i].avarage_disciplines; j++) {
-            strcpy(student[i].num_of_subject[j].name_lessons, subjects[rand() % 50]);
+            strcpy(student[i].num_of_subject[j].name_lessons, subjects[rand() % (sizeof(subjects) / sizeof(subjects[0]))]);
             student[i].num_of_subject[j].audience_lecture = rand() % 255 + 1;
             student[i].num_of_subject[j].audience_labs = rand() % 255 + 1;
             student[i].num_of_subject[j].sum_hours = rand() % 255 + 1;
@@ -138,6 +148,49 @@ void clean() {
     student = NULL;
 }
 
+// Функция для проверки доступной памяти
+int check_memory(int N) {
+    size_t required_memory = N * sizeof(My_Student); // Память для студентов
+    for (int i = 0; i < N; i++) {
+        int disciplines = rand() % (max_sub - min_sub + 1) + min_sub;
+        required_memory += disciplines * sizeof(My_Subject); // Память для дисциплин
+    }
+
+    // Получаем информацию о доступной памяти
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memInfo);
+
+    size_t free_memory = memInfo.ullAvailPhys; // Доступная физическая память в байтах
+
+    if (required_memory > free_memory) {
+        printf("Ошибка: недостаточно памяти для генерации данных. Требуется: %.2f MB, доступно: %.2f MB\n",
+               required_memory / 1048576.0, free_memory / 1048576.0);
+        return 0;
+    }
+    return 1;
+}
+
+// функция для расчета максимального количества студентов
+void check_max_students() {
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memInfo);
+
+    size_t free_memory = memInfo.ullAvailPhys; // Доступная память в байтах
+
+    // Минимальный и максимальный размер одного студента
+    size_t min_student_size = sizeof(My_Student) + min_sub * sizeof(My_Subject);  // Минимум
+    size_t max_student_size = sizeof(My_Student) + max_sub * sizeof(My_Subject);  // Максимум
+
+    size_t max_students_min = free_memory / min_student_size;
+    size_t max_students_max = free_memory / max_student_size;
+
+    printf("Доступная память: %.2f GB\n", free_memory / 1073741824.0);
+    printf("Максимум студентов (минимум размера): %zu\n", max_students_min);
+    printf("Максимум студентов (максимум размера): %zu\n", max_students_max);
+}
+
 int main(void) {
     char command[100];
     printf("gen N - generate N students\n"
@@ -146,6 +199,7 @@ int main(void) {
            "get - get size (B, KB, MB, GB)\n"
            "print N - print N students\n"
            "clean - memory clearing\n"
+           "max_students - check maximum number of students that can be generated\n"
            "exit - finish the program\n\n");
 
     while (1) {
@@ -156,7 +210,11 @@ int main(void) {
             break;
         } else if (strncmp(command, "gen ", 4) == 0) {
             N = atoi(command + 4);
-            generait(N);
+            if (check_memory(N)) {
+                generait(N);
+            } else {
+                printf("Недостаточно памяти для генерации %d студентов.\n", N);
+            }
         } else if (strncmp(command, "min ", 4) == 0) {
             min_sub = atoi(command + 4);
         } else if (strncmp(command, "max ", 4) == 0) {
@@ -168,6 +226,8 @@ int main(void) {
             print_stud(n);
         } else if (strncmp(command, "clean\n", 6) == 0) {
             clean();
+        } else if (strncmp(command, "max_students\n", 13) == 0) {
+            check_max_students();
         } else {
             printf("Неизвестная команда\n");
         }
