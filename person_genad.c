@@ -17,7 +17,9 @@ typedef struct Subject {
 } My_Subject;
 
 typedef struct Student {
+    char surname[20];
     char name[20];
+    char patronymic[20];
     uint16_t b_date;
     char group[6];
     My_Subject *num_of_subject;
@@ -29,18 +31,43 @@ int N = 0;
 int max_sub = 20;
 int min_sub = 10;
 
-const char *full_names[] = {
-    "Иван Иванов", "Петр Петров", "Семен Смирнов", "Алексей Кузнецов", "Василий Васильев",
-    "Андрей Попов", "Дмитрий Сидоров", "Михаил Михайлов", "Федор Федоров", "Николай Новиков",
-    "Сергей Кравцов", "Александр Соловьев", "Владимир Чернов", "Игорь Морозов", "Кирилл Кириллов",
-    "Егор Егоров", "Виктор Костин", "Алексей Баранов", "Роман Романов", "Тимофей Тимофеев",
-    "Денис Денисов", "Станислав Степанов", "Анатолий Анатольев", "Виктория Викторовна", "Мария Маркова",
-    "Елена Еленина", "Ольга Ольгова", "Наталья Натальева", "Татьяна Татьянина", "Анастасия Анастасиева",
-    "Светлана Светлова", "Юлия Юрьева", "Ксения Ксенофонтова", "Тимур Тимуров", "Илья Ильин",
-    "Григорий Григорьев", "Савелий Савельев", "Арсений Арсеньев", "Александр Александров", "Максим Максимов",
-    "Даниил Данилов", "Семён Семёнов", "Валерий Валерьев", "Кирилл Кириллов", "Евгений Евгеньев",
-    "Роман Романов", "Станислав Станиславов", "Дмитрий Дмитриев", "Артем Артемьев", "Никита Никитин"
+const char *surnames[] = {
+    "Иванов", "Петров", "Смирнов", "Кузнецов", "Васильев",
+    "Попов", "Сидоров", "Михайлов", "Федоров", "Новиков",
+    "Кравцов", "Соловьев", "Чернов", "Морозов", "Кириллов",
+    "Егоров", "Костин", "Баранов", "Романов", "Тимофеев",
+    "Денисов", "Степанов", "Анатольев", "Викторов", "Максимов",
+    "Данилов", "Семёнов", "Валерий", "Кириллов", "Евгений",
+    "Романов", "Станиславов", "Дмитрий", "Артем", "Никита"
 };
+
+const char *names[] = {
+    "Иван", "Петр", "Семен", "Алексей", "Василий",
+    "Андрей", "Дмитрий", "Михаил", "Федор", "Николай",
+    "Сергей", "Александр", "Владимир", "Игорь", "Кирилл",
+    "Егор", "Виктор", "Роман", "Тимофей",
+    "Денис", "Станислав", "Анатолий", "Тимур", "Илья",
+    "Григорий", "Савелий", "Арсений", "Максим", "Даниил",
+    "Семён", "Валерий", "Евгений", "Артем", "Никита"
+};
+
+const char *patronymics[] = {
+    "Иванович ", "Петрович ", "Семенович ", "Алексеевич ", "Васильевич ",
+    "Андреевич ", "Дмитриевич ", "Михайлович ", "Федорович ", "Николаевич ",
+    "Сергеевич ", "Александрович ", "Егорович ", "Викторович ", "Романович ",
+    "Тимофеевич ", "Денисович ", "Станиславович ", "Анатольевич ", "Максимович ",
+    "Данилович ", "Семёнович ", "Валерьевич ", "Кириллович ", "Евгеньевич ",
+    "Романович ", "Дмитриевич ", "Артемович ", "Никитич ", "Григорьевич ",
+    "Александрович ", "Станиславович ", "Анатольевич ", "Максимович ", "Данилович ",
+    "Семёнович ", "Валерьевич ", "Кириллович ", "Евгеньевич ", "Сергеевич ",
+    "Андреевич ", "Дмитриевич ", "Михайлович ", "Федорович ", "Николаевич ",
+    "Сидорович ", "Игоревич ", "Валентинович ", "Станиславович ", "Тимофеевич ",
+    "Евгеньевич ", "Денисович ", "Кириллович ", "Семенович ", "Петрович "
+};
+
+
+
+
 
 const char *classrooms[] = {
     "101", "102", "103", "104", "105",
@@ -66,7 +93,6 @@ const char *subjects[] = {
     "История науки", "Теория игр", "Менеджмент", "Маркетинг", "Финансовый анализ"
 };
 
-
 void generait(int N) {
     srand(time(NULL));
     student = (My_Student*)calloc(N, sizeof(My_Student));
@@ -78,19 +104,22 @@ void generait(int N) {
     for (int i = 0; i < N; i++) {
         My_Student *current_student = &student[i];
 
-        strncpy(current_student->name, full_names[rand() % (sizeof(full_names) / sizeof(full_names[0]))], sizeof(current_student->name) - 1);
+        // Заполнение полей фамилии, имени и отчества
+        strncpy(current_student->surname, surnames[rand() % (sizeof(surnames) / sizeof(surnames[0]))], sizeof(current_student->surname) - 1);
+        current_student->surname[sizeof(current_student->surname) - 1] = '\0';
+
+        strncpy(current_student->name, names[rand() % (sizeof(names) / sizeof(names[0]))], sizeof(current_student->name) - 1);
         current_student->name[sizeof(current_student->name) - 1] = '\0';
 
+        strncpy(current_student->patronymic, patronymics[rand() % (sizeof(patronymics) / sizeof(patronymics[0]))], sizeof(current_student->patronymic) - 1);
+        current_student->patronymic[sizeof(current_student->patronymic) - 1] = '\0';
 
         current_student->b_date = 2006 + rand() % 2;
-
 
         strncpy(current_student->group, classrooms[rand() % (sizeof(classrooms) / sizeof(classrooms[0]))], sizeof(current_student->group) - 1);
         current_student->group[sizeof(current_student->group) - 1] = '\0';
 
-
         current_student->avarage_disciplines = rand() % (max_sub - min_sub + 1) + min_sub;
-
 
         current_student->num_of_subject = (My_Subject*)calloc(current_student->avarage_disciplines, sizeof(My_Subject));
         if (current_student->num_of_subject == NULL) {
@@ -123,13 +152,14 @@ void print_stud(int n) {
     }
     for (int i = 0; i < n; i++) {
         My_Student *current_student = &student[i];
-        printf("Имя студента: %s, группа студента: %s, год рождения: %d\n", current_student->name, current_student->group, current_student->b_date);
+        printf("Студент: %s %s %s Группа: %s, Год рождения: %d\n",
+               current_student->surname, current_student->name, current_student->patronymic,
+               current_student->group, current_student->b_date);
         for (int j = 0; j < current_student->avarage_disciplines; j++) {
             My_Subject *current_subject = &current_student->num_of_subject[j];
             printf("Предмет %d: %s, Лекционная комната: %d, Лабораторная комната: %d, Часы: %d, Форма сдачи: %d\n",
-                j + 1, current_subject->name_lessons, current_subject->audience_lecture,
-                current_subject->audience_labs,
-                current_subject->sum_hours, current_subject->form);
+                   j + 1, current_subject->name_lessons, current_subject->audience_lecture,
+                   current_subject->audience_labs, current_subject->sum_hours, current_subject->form);
         }
         printf("\n");
     }
@@ -174,10 +204,10 @@ void clean() {
 
 // Функция для проверки доступной памяти
 int check_memory(int N) {
-    size_t required_memory = N * sizeof(My_Student); 
+    size_t required_memory = N * sizeof(My_Student);
     for (int i = 0; i < N; i++) {
         int disciplines = rand() % (max_sub - min_sub + 1) + min_sub;
-        required_memory += disciplines * sizeof(My_Subject); 
+        required_memory += disciplines * sizeof(My_Subject);
     }
 
     MEMORYSTATUSEX memInfo;
